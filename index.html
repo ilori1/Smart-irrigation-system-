@@ -62,11 +62,14 @@
                 const response = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?cache=${Date.now()}`);
                 const data = await response.json();
                 
-                document.getElementById('val-temp').innerText = (data.field1 && parseFloat(data.field1) > 0) ? parseFloat(data.field1).toFixed(1) + ' °C' : 'ERR';
-                document.getElementById('val-hum').innerText = (data.field2 && parseFloat(data.field2) > 0) ? parseFloat(data.field2).toFixed(1) + ' %' : 'ERR';
+                const tempVal = parseFloat(data.field1);
+                const humVal  = parseFloat(data.field2);
+
+                document.getElementById('val-temp').innerText = !isNaN(tempVal) ? tempVal.toFixed(1) + ' °C' : 'ERR';
+                document.getElementById('val-hum').innerText  = !isNaN(humVal)  ? humVal.toFixed(1) + ' %' : 'ERR';
                 document.getElementById('val-shallow').innerText = (data.field3 || '0') + ' %';
-                document.getElementById('val-deep').innerText = (data.field4 || '0') + ' %';
-                document.getElementById('val-rain').innerText = parseInt(data.field5) > 50 ? 'Raining' : 'Dry';
+                document.getElementById('val-deep').innerText    = (data.field4 || '0') + ' %';
+                document.getElementById('val-rain').innerText    = parseInt(data.field5) > 50 ? 'Raining' : 'Dry';
                 
                 const pumpState = parseInt(data.field6);
                 const pumpElem = document.getElementById('val-pump');
@@ -77,20 +80,33 @@
             }
         }
 
-        function sendTalkBack(command) {
+        async function sendTalkBack(command) {
             const msg = document.getElementById('status-msg');
             msg.innerText = "Transmitting command to field controller...";
-            
-            // Fixed CORS issue by sending a GET request image beacon
-            const url = `https://api.thingspeak.com/talkbacks/${TALKBACK_ID}/commands.json?api_key=${TALKBACK_API_KEY}&command_string=${command}&_method=POST`;
-            
-            const img = new Image();
-            img.onload = img.onerror = function() {
-                msg.innerText = `Command "${command}" sent successfully!`;
-                msg.style.color = "#10b981";
-                setTimeout(fetchTelemetry, 2000);
-            };
-            img.src = url;
+            msg.style.color = "#64748b";
+
+            const url = `https://api.thingspeak.com/talkbacks/${TALKBACK_ID}/commands.json`;
+            const bodyData = `api_key=${TALKBACK_API_KEY}&command_string=${command}`;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: bodyData
+                });
+
+                if (res.ok) {
+                    msg.innerText = `Command "${command}" queued successfully! ESP32 will pick it up shorty.`;
+                    msg.style.color = "#10b981";
+                    setTimeout(fetchTelemetry, 3000);
+                } else {
+                    msg.innerText = "Failed to queue command. Check API Key or TalkBack ID.";
+                    msg.style.color = "#ef4444";
+                }
+            } catch (err) {
+                msg.innerText = "Network error sending command.";
+                msg.style.color = "#ef4444";
+            }
         }
 
         setInterval(fetchTelemetry, 5000);
