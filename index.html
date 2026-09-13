@@ -3,183 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Irrigation System Dashboard</title>
+    <title>Smart Farm Automated Monitoring & Control</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: auto;
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .card h3 {
-            margin-top: 0;
-            color: #7f8c8d;
-            font-size: 0.9em;
-            text-transform: uppercase;
-        }
-        .status-val {
-            font-size: 1.8em;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .status-on { color: #27ae60; }
-        .status-off { color: #e74c3c; }
-        .btn-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-on { background-color: #27ae60; color: white; }
-        .btn-off { background-color: #e74c3c; color: white; }
-        .btn-auto { background-color: #2980b9; color: white; }
-        button:hover { opacity: 0.9; }
-        iframe {
-            width: 100%;
-            height: 260px;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: #2c3e50; margin-bottom: 5px; }
+        .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .card h3 { color: #27ae60; margin-bottom: 10px; font-size: 16px; }
+        iframe { border: none; width: 100%; height: 260px; border-radius: 8px; }
+        .control-panel { max-width: 1200px; margin: 30px auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .btn { padding: 12px 25px; font-size: 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; margin: 10px; text-decoration: none; display: inline-block; color: white; }
+        .btn-on { background-color: #27ae60; }
+        .btn-off { background-color: #e74c3c; }
+        .btn-auto { background-color: #2980b9; }
+        .ip-input { padding: 10px; font-size: 14px; width: 250px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Smart Irrigation System Monitor</h1>
+    <div class="header">
+        <h1>🌾 Smart Farm Irrigation & Monitoring</h1>
+        <p>Real-Time Telemetry & Remote Irrigation Override Panel</p>
+    </div>
 
-    <!-- LIVE METRICS -->
-    <div class="grid">
+    <!-- Live Telemetry Charts (ThingSpeak iFrames) -->
+    <div class="card-container">
         <div class="card">
-            <h3>Shallow Moisture (A)</h3>
-            <div id="stat-a" class="status-val">--</div>
+            <h3>Temperature (°C)</h3>
+            <iframe src="https://thingspeak.com/channels/3489654/charts/1?bgcolor=%23ffffff&color=%23d62728&dynamic=true&type=line&results=15"></iframe>
         </div>
         <div class="card">
-            <h3>Deep Moisture (B)</h3>
-            <div id="stat-b" class="status-val">--</div>
+            <h3>Air Humidity (%)</h3>
+            <iframe src="https://thingspeak.com/channels/3489654/charts/2?bgcolor=%23ffffff&color=%231f77b4&dynamic=true&type=line&results=15"></iframe>
         </div>
         <div class="card">
-            <h3>Rain Guard (C)</h3>
-            <div id="stat-c" class="status-val">--</div>
+            <h3>Shallow Soil Moisture (%)</h3>
+            <iframe src="https://thingspeak.com/channels/3489654/charts/3?bgcolor=%23ffffff&color=%232ca02c&dynamic=true&type=line&results=15"></iframe>
         </div>
         <div class="card">
-            <h3>Heat Sensor (D)</h3>
-            <div id="stat-d" class="status-val">--</div>
+            <h3>Deep Soil Moisture (%)</h3>
+            <iframe src="https://thingspeak.com/channels/3489654/charts/4?bgcolor=%23ffffff&color=%239467bd&dynamic=true&type=line&results=15"></iframe>
         </div>
         <div class="card">
-            <h3>Pump State (Y)</h3>
-            <div id="stat-y" class="status-val">--</div>
+            <h3>Rain Status (100=Rain / 0=Dry)</h3>
+            <iframe src="https://thingspeak.com/channels/3489654/charts/5?bgcolor=%23ffffff&color=%23ff7f0e&dynamic=true&type=line&results=15"></iframe>
+        </div>
+        <div class="card">
+            <h3>Water Pump State (1=ON / 0=OFF)</h3>
+            <iframe src="https://thingspeak.com/channels/3489654/charts/6?bgcolor=%23ffffff&color=%238c564b&dynamic=true&type=step&results=15"></iframe>
         </div>
     </div>
 
-    <!-- REMOTE CONTROL OVERRIDE -->
-    <div class="card" style="margin-bottom: 25px;">
-        <h3>Remote Pump Control Override</h3>
-        <div class="btn-group">
-            <button class="btn-on" onclick="sendOverride(1)">Force Pump ON</button>
-            <button class="btn-off" onclick="sendOverride(2)">Force Pump OFF</button>
-            <button class="btn-auto" onclick="sendOverride(0)">Resume Auto Logic</button>
-        </div>
-        <p id="control-msg" style="font-size: 0.85em; color: #7f8c8d; margin-top: 10px;"></p>
+    <!-- Remote Override Controls -->
+    <div class="control-panel">
+        <h2>Manual Override Pump Control</h2>
+        <p>Enter your ESP32 IP address (shown on LCD during startup) to issue direct commands:</p>
+        <input type="text" id="espIp" class="ip-input" placeholder="e.g. 192.168.1.50"><br>
+        
+        <button class="btn btn-on" onclick="sendOverride('on')">FORCE PUMP ON</button>
+        <button class="btn btn-off" onclick="sendOverride('off')">FORCE PUMP OFF</button>
+        <button class="btn btn-auto" onclick="sendOverride('auto')">ENABLE AUTO MODE</button>
     </div>
 
-    <!-- THINGSPEAK CHARTS EMBED -->
-    <div class="grid">
-        <div class="card">
-            <h3>Pump Activation History</h3>
-            <iframe id="chart-pump" src=""></iframe>
-        </div>
-        <div class="card">
-            <h3>Rain Sensor Logs</h3>
-            <iframe id="chart-rain" src=""></iframe>
-        </div>
-    </div>
-</div>
-
-<script>
-    // ====================================================
-    // CONFIGURATION - REPLACE WITH YOUR THINGSPEAK KEYS
-    // ====================================================
-    const CHANNEL_ID = "YOUR_CHANNEL_ID";
-    const READ_API_KEY = "YOUR_READ_API_KEY";
-    const WRITE_API_KEY = "YOUR_WRITE_API_KEY";
-
-    // Initialize Chart IFrames
-    document.getElementById('chart-pump').src = `https://thingspeak.com/channels/${CHANNEL_ID}/charts/5?bgcolor=%23ffffff&color=%23d62728&dynamic=true&type=line`;
-    document.getElementById('chart-rain').src = `https://thingspeak.com/channels/${CHANNEL_ID}/charts/3?bgcolor=%23ffffff&color=%231f77b4&dynamic=true&type=line`;
-
-    // Fetch Live Telemetry Data
-    async function fetchTelemetry() {
-        try {
-            const response = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?api_key=${READ_API_KEY}`);
-            const data = await response.json();
-
-            updateStatus('stat-a', data.field1 == "1" ? "DRY" : "WET", data.field1 == "1");
-            updateStatus('stat-b', data.field2 == "1" ? "DRY" : "WET", data.field2 == "1");
-            updateStatus('stat-c', data.field3 == "1" ? "RAINING" : "CLEAR", data.field3 == "1");
-            updateStatus('stat-d', data.field4 == "1" ? "HIGH HEAT" : "NORMAL", data.field4 == "1");
-            updateStatus('stat-y', data.field5 == "1" ? "PUMPING" : "IDLE", data.field5 == "1");
-        } catch (err) {
-            console.error("Telemetry fetch error:", err);
-        }
-    }
-
-    function updateStatus(elementId, text, isActive) {
-        const el = document.getElementById(elementId);
-        el.textContent = text;
-        el.className = `status-val ${isActive ? 'status-on' : 'status-off'}`;
-    }
-
-    // Send Manual Override Command to ThingSpeak Field 8
-    async function sendOverride(state) {
-        const msgEl = document.getElementById('control-msg');
-        msgEl.textContent = "Sending command to cloud...";
-        try {
-            const resp = await fetch(`https://api.thingspeak.com/update?api_key=${WRITE_API_KEY}&field8=${state}`);
-            if (resp.ok) {
-                msgEl.textContent = `Command sent! State set to: ${state === 1 ? 'FORCE ON' : state === 2 ? 'FORCE OFF' : 'AUTO'}`;
-            } else {
-                msgEl.textContent = "Failed to update command.";
+    <script>
+        function sendOverride(endpoint) {
+            let ip = document.getElementById('espIp').value.trim();
+            if(!ip) {
+                alert("Please enter the ESP32 IP Address first!");
+                return;
             }
-        } catch (e) {
-            msgEl.textContent = "Error connecting to ThingSpeak API.";
+            if(!ip.startsWith("http://")) {
+                ip = "http://" + ip;
+            }
+            window.open(ip + "/" + endpoint, "_blank");
         }
-    }
-
-    // Poll live data every 10 seconds
-    setInterval(fetchTelemetry, 10000);
-    fetchTelemetry();
-</script>
+    </script>
 
 </body>
 </html>
