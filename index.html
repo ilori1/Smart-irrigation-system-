@@ -3,114 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Agricultural Control Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Smart Agricultural Dashboard</title>
     <style>
-        :root { --primary: #10b981; --danger: #ef4444; --info: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
-        .header { text-align: center; margin-bottom: 32px; }
-        .header h1 { font-size: 26px; font-weight: 700; color: #1e293b; margin: 0 0 8px 0; }
-        .header p { color: #64748b; font-size: 14px; margin: 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto 24px auto; }
-        .metric-card { background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .metric-card .label { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
-        .metric-card .value { font-size: 28px; font-weight: 700; margin: 10px 0 4px 0; color: #0f172a; }
-        .metric-card .sub { font-size: 12px; color: #94a3b8; }
-        .control-panel { max-width: 1100px; margin: 0 auto; background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .control-panel h2 { font-size: 18px; margin: 0 0 16px 0; color: #1e293b; }
-        .btn-group { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-        .btn { padding: 12px 24px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: white; }
-        .btn-on { background: var(--primary); } .btn-on:hover { background: #059669; }
-        .btn-off { background: var(--danger); } .btn-off:hover { background: #dc2626; }
-        .btn-auto { background: var(--info); } .btn-auto:hover { background: #2563eb; }
-        #status-msg { margin-top: 14px; font-size: 13px; font-weight: 500; color: #64748b; }
+        body { font-family: Arial, sans-serif; background: #f1f5f9; padding: 20px; text-align: center; }
+        .card-grid { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; }
+        .card { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 130px; }
+        .card h3 { margin: 0 0 5px 0; font-size: 14px; color: #64748b; }
+        .card p { margin: 0; font-size: 22px; font-weight: bold; color: #0f172a; }
+        .btn { padding: 12px 20px; font-size: 14px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; margin: 5px; color: white; }
+        .btn-on { background: #10b981; }
+        .btn-off { background: #ef4444; }
+        .btn-auto { background: #3b82f6; }
+        #status { margin-top: 15px; font-weight: bold; color: #475569; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🌾 Smart Agricultural Control Center</h1>
-        <p>Real-Time Field Telemetry & Remote Irrigation Control</p>
+    <h2>Smart Irrigation Dashboard</h2>
+
+    <div class="card-grid">
+        <div class="card"><h3>Temp</h3><p id="temp">--</p></div>
+        <div class="card"><h3>Humidity</h3><p id="hum">--</p></div>
+        <div class="card"><h3>Shallow Soil</h3><p id="shallow">--</p></div>
+        <div class="card"><h3>Deep Soil</h3><p id="deep">--</p></div>
+        <div class="card"><h3>Rain</h3><p id="rain">--</p></div>
+        <div class="card"><h3>Pump State</h3><p id="pump">--</p></div>
     </div>
 
-    <div class="grid">
-        <div class="metric-card"><div class="label">Temperature</div><div class="value" id="val-temp">-- °C</div><div class="sub">Ambient Sensor</div></div>
-        <div class="metric-card"><div class="label">Humidity</div><div class="value" id="val-hum">-- %</div><div class="sub">Air Moisture</div></div>
-        <div class="metric-card"><div class="label">Shallow Soil</div><div class="value" id="val-shallow">-- %</div><div class="sub">Top Root Zone</div></div>
-        <div class="metric-card"><div class="label">Deep Soil</div><div class="value" id="val-deep">-- %</div><div class="sub">Deep Root Zone</div></div>
-        <div class="metric-card"><div class="label">Rain Status</div><div class="value" id="val-rain">--</div><div class="sub">Precipitation Sensor</div></div>
-        <div class="metric-card"><div class="label">Pump State</div><div class="value" id="val-pump">--</div><div class="sub">Relay Status</div></div>
+    <div>
+        <button class="btn btn-on" onclick="sendTalkback('TURN_ON')">FORCE PUMP ON</button>
+        <button class="btn btn-off" onclick="sendTalkback('TURN_OFF')">FORCE PUMP OFF</button>
+        <button class="btn btn-auto" onclick="sendTalkback('AUTO_MODE')">RESUME AUTO</button>
     </div>
 
-    <div class="control-panel">
-        <h2>REMOTE PUMP CONTROL OVERRIDE</h2>
-        <div class="btn-group">
-            <button class="btn btn-on" onclick="sendTalkBack('TURN_ON')">Force Pump ON</button>
-            <button class="btn btn-off" onclick="sendTalkBack('TURN_OFF')">Force Pump OFF</button>
-            <button class="btn btn-auto" onclick="sendTalkBack('AUTO_MODE')">Resume Auto Logic</button>
-        </div>
-        <div id="status-msg">System Active - Polling field metrics...</div>
-    </div>
+    <div id="status">Polling field telemetry...</div>
 
     <script>
         const CHANNEL_ID = "3489654";
         const TALKBACK_ID = "57765";
-        const TALKBACK_API_KEY = "NB5U4U4KOORPJ1O6";
+        const TALKBACK_KEY = "NB5U4U4KOORPJ1O6";
 
-        async function fetchTelemetry() {
+        async function updateDashboard() {
             try {
-                const response = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?cache=${Date.now()}`);
-                const data = await response.json();
-                
-                const tempVal = parseFloat(data.field1);
-                const humVal  = parseFloat(data.field2);
+                const res = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?results=1&cache=${Date.now()}`);
+                const data = await res.json();
 
-                document.getElementById('val-temp').innerText = !isNaN(tempVal) ? tempVal.toFixed(1) + ' °C' : 'ERR';
-                document.getElementById('val-hum').innerText  = !isNaN(humVal)  ? humVal.toFixed(1) + ' %' : 'ERR';
-                document.getElementById('val-shallow').innerText = (data.field3 || '0') + ' %';
-                document.getElementById('val-deep').innerText    = (data.field4 || '0') + ' %';
-                document.getElementById('val-rain').innerText    = parseInt(data.field5) > 50 ? 'Raining' : 'Dry';
+                document.getElementById('temp').innerText = (parseFloat(data.field1) || 0).toFixed(1) + ' °C';
+                document.getElementById('hum').innerText  = (parseFloat(data.field2) || 0).toFixed(1) + ' %';
+                document.getElementById('shallow').innerText = (data.field3 || '0') + ' %';
+                document.getElementById('deep').innerText    = (data.field4 || '0') + ' %';
+                document.getElementById('rain').innerText    = parseInt(data.field5) > 50 ? 'YES' : 'NO';
                 
-                const pumpState = parseInt(data.field6);
-                const pumpElem = document.getElementById('val-pump');
-                pumpElem.innerText = pumpState === 1 ? 'ACTIVE' : 'IDLE';
-                pumpElem.style.color = pumpState === 1 ? '#10b981' : '#ef4444';
-            } catch (err) {
-                console.error("Telemetry fetch failed", err);
+                const pumpActive = parseInt(data.field6) === 1;
+                const pumpEl = document.getElementById('pump');
+                pumpEl.innerText = pumpActive ? 'ON' : 'OFF';
+                pumpEl.style.color = pumpActive ? '#10b981' : '#ef4444';
+            } catch (e) {
+                document.getElementById('status').innerText = "Telemetry sync error. Retrying...";
             }
         }
 
-        async function sendTalkBack(command) {
-            const msg = document.getElementById('status-msg');
-            msg.innerText = "Transmitting command to field controller...";
-            msg.style.color = "#64748b";
+        function sendTalkback(cmd) {
+            document.getElementById('status').innerText = `Sending "${cmd}" to ThingSpeak...`;
+            
+            // Uses dynamic script insertion to completely bypass CORS browser restrictions
+            const script = document.createElement('script');
+            script.src = `https://api.thingspeak.com/talkbacks/${TALKBACK_ID}/commands.json?api_key=${TALKBACK_KEY}&command_string=${cmd}&method=POST`;
+            document.body.appendChild(script);
 
-            const url = `https://api.thingspeak.com/talkbacks/${TALKBACK_ID}/commands.json`;
-            const bodyData = `api_key=${TALKBACK_API_KEY}&command_string=${command}`;
-
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: bodyData
-                });
-
-                if (res.ok) {
-                    msg.innerText = `Command "${command}" queued successfully! ESP32 will pick it up shorty.`;
-                    msg.style.color = "#10b981";
-                    setTimeout(fetchTelemetry, 3000);
-                } else {
-                    msg.innerText = "Failed to queue command. Check API Key or TalkBack ID.";
-                    msg.style.color = "#ef4444";
-                }
-            } catch (err) {
-                msg.innerText = "Network error sending command.";
-                msg.style.color = "#ef4444";
-            }
+            setTimeout(() => {
+                document.getElementById('status').innerText = `Command "${cmd}" sent successfully!`;
+                document.body.removeChild(script);
+                updateDashboard();
+            }, 1500);
         }
 
-        setInterval(fetchTelemetry, 5000);
-        fetchTelemetry();
+        setInterval(updateDashboard, 4000);
+        updateDashboard();
     </script>
 </body>
 </html>
