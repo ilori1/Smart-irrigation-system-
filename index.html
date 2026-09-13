@@ -3,40 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Agricultural Dashboard</title>
+    <title>AgriTech Smart Irrigation Console</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f1f5f9; padding: 20px; text-align: center; }
-        .card-grid { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; }
-        .card { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 130px; }
-        .card h3 { margin: 0 0 5px 0; font-size: 14px; color: #64748b; }
-        .card p { margin: 0; font-size: 22px; font-weight: bold; color: #0f172a; }
-        .btn { padding: 12px 20px; font-size: 14px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; margin: 5px; color: white; }
-        .btn-on { background: #10b981; }
-        .btn-off { background: #ef4444; }
-        .btn-auto { background: #3b82f6; }
-        #status { margin-top: 15px; font-weight: bold; color: #475569; }
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        .card .title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .card .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .controls {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-on { background: var(--success); }
+        .btn-off { background: var(--danger); }
+        .btn-auto { background: var(--primary); }
+
+        .status-bar {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            background: #1e293b80;
+            padding: 10px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Smart Irrigation Dashboard</h2>
+    <div class="container">
+        <div class="header">
+            <h1>Smart Agricultural Telemetry</h1>
+            <p>Field Control & Telemetry Management System</p>
+        </div>
 
-    <div class="card-grid">
-        <div class="card"><h3>Temp</h3><p id="temp">--</p></div>
-        <div class="card"><h3>Humidity</h3><p id="hum">--</p></div>
-        <div class="card"><h3>Shallow Soil</h3><p id="shallow">--</p></div>
-        <div class="card"><h3>Deep Soil</h3><p id="deep">--</p></div>
-        <div class="card"><h3>Rain</h3><p id="rain">--</p></div>
-        <div class="card"><h3>Pump State</h3><p id="pump">--</p></div>
+        <div class="grid">
+            <div class="card"><div class="title">Temperature</div><div class="value" id="temp">--</div></div>
+            <div class="card"><div class="title">Humidity</div><div class="value" id="hum">--</div></div>
+            <div class="card"><div class="title">Shallow Soil</div><div class="value" id="shallow">--</div></div>
+            <div class="card"><div class="title">Deep Soil</div><div class="value" id="deep">--</div></div>
+            <div class="card"><div class="title">Rainfall</div><div class="value" id="rain">--</div></div>
+            <div class="card"><div class="title">Pump State</div><div class="value" id="pump">--</div></div>
+            <div class="card"><div class="title">Active Run Time</div><div class="value" id="runtime">0s</div></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-on" onclick="sendTalkbackCommand('TURN_ON')">FORCE PUMP ON</button>
+            <button class="btn btn-off" onclick="sendTalkbackCommand('TURN_OFF')">FORCE PUMP OFF</button>
+            <button class="btn btn-auto" onclick="sendTalkbackCommand('AUTO_MODE')">RESUME AUTO</button>
+        </div>
+
+        <div style="text-align: center;">
+            <div class="status-bar" id="status">Syncing with ThingSpeak field node...</div>
+        </div>
     </div>
-
-    <div>
-        <button class="btn btn-on" onclick="sendTalkback('TURN_ON')">FORCE PUMP ON</button>
-        <button class="btn btn-off" onclick="sendTalkback('TURN_OFF')">FORCE PUMP OFF</button>
-        <button class="btn btn-auto" onclick="sendTalkback('AUTO_MODE')">RESUME AUTO</button>
-    </div>
-
-    <div id="status">Polling field telemetry...</div>
 
     <script>
         const CHANNEL_ID = "3489654";
@@ -45,37 +156,78 @@
 
         async function updateDashboard() {
             try {
-                const res = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?results=1&cache=${Date.now()}`);
+                const res = await fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?cache=${Date.now()}`);
+                if (!res.ok) throw new Error("HTTP connection error");
+                
                 const data = await res.json();
 
                 document.getElementById('temp').innerText = (parseFloat(data.field1) || 0).toFixed(1) + ' °C';
                 document.getElementById('hum').innerText  = (parseFloat(data.field2) || 0).toFixed(1) + ' %';
                 document.getElementById('shallow').innerText = (data.field3 || '0') + ' %';
                 document.getElementById('deep').innerText    = (data.field4 || '0') + ' %';
-                document.getElementById('rain').innerText    = parseInt(data.field5) > 50 ? 'YES' : 'NO';
                 
+                // Rain Check
+                const rainVal = parseInt(data.field5) || 0;
+                document.getElementById('rain').innerText = rainVal > 50 ? 'YES' : 'NO';
+                document.getElementById('rain').style.color = rainVal > 50 ? '#3b82f6' : '#f8fafc';
+                
+                // Pump Status
                 const pumpActive = parseInt(data.field6) === 1;
                 const pumpEl = document.getElementById('pump');
-                pumpEl.innerText = pumpActive ? 'ON' : 'OFF';
+                pumpEl.innerText = pumpActive ? 'ACTIVE' : 'IDLE';
                 pumpEl.style.color = pumpActive ? '#10b981' : '#ef4444';
+
+                // Runtime Calculation Display (Seconds / Minutes conversion)
+                const runSecs = parseInt(data.field7) || 0;
+                if (runSecs > 60) {
+                    const mins = Math.floor(runSecs / 60);
+                    const secs = runSecs % 60;
+                    document.getElementById('runtime').innerText = `${mins}m ${secs}s`;
+                } else {
+                    document.getElementById('runtime').innerText = `${runSecs}s`;
+                }
+
+                document.getElementById('status').innerText = `Telemetry synced at ${new Date().toLocaleTimeString()}`;
             } catch (e) {
-                document.getElementById('status').innerText = "Telemetry sync error. Retrying...";
+                document.getElementById('status').innerText = "Syncing telemetry data...";
             }
         }
 
-        function sendTalkback(cmd) {
-            document.getElementById('status').innerText = `Sending "${cmd}" to ThingSpeak...`;
-            
-            // Uses dynamic script insertion to completely bypass CORS browser restrictions
-            const script = document.createElement('script');
-            script.src = `https://api.thingspeak.com/talkbacks/${TALKBACK_ID}/commands.json?api_key=${TALKBACK_KEY}&command_string=${cmd}&method=POST`;
-            document.body.appendChild(script);
+        function sendTalkbackCommand(cmd) {
+            document.getElementById('status').innerText = `Queuing command "${cmd}"...`;
+
+            // Dynamic Form Submission Bypasses Browser CORS restrictions completely
+            const iframe = document.createElement('iframe');
+            iframe.name = 'tb_iframe';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `https://api.thingspeak.com/talkbacks/${TALKBACK_ID}/commands`;
+            form.target = 'tb_iframe';
+
+            const keyInput = document.createElement('input');
+            keyInput.type = 'hidden';
+            keyInput.name = 'api_key';
+            keyInput.value = TALKBACK_KEY;
+            form.appendChild(keyInput);
+
+            const cmdInput = document.createElement('input');
+            cmdInput.type = 'hidden';
+            cmdInput.name = 'command_string';
+            cmdInput.value = cmd;
+            form.appendChild(cmdInput);
+
+            document.body.appendChild(form);
+            form.submit();
 
             setTimeout(() => {
-                document.getElementById('status').innerText = `Command "${cmd}" sent successfully!`;
-                document.body.removeChild(script);
+                document.getElementById('status').innerText = `Command "${cmd}" sent! Waiting for ESP32 polling cycle...`;
+                document.body.removeChild(form);
+                document.body.removeChild(iframe);
                 updateDashboard();
-            }, 1500);
+            }, 1000);
         }
 
         setInterval(updateDashboard, 4000);
