@@ -5,6 +5,9 @@
 #include <ThingSpeak.h>
 #include "DHT.h"
 
+// --- Function Prototypes ---
+void checkTalkBack();
+
 // --- Network Credentials ---
 const char* WIFI_SSID = "ILORI";        
 const char* WIFI_PASS = "11111111";    
@@ -17,7 +20,6 @@ String talkBackID     = "57765";
 String talkBackAPIKey = "NB5U4U4KOORPJ1O6"; 
 
 // --- Calibration Constants ---
-// ESP32 Analog Inputs: 4095 = Completely Dry (Air), 1400 = Submerged
 const int SOIL_DRY = 4095; 
 const int SOIL_WET = 1400; 
 
@@ -42,14 +44,52 @@ unsigned long pumpStartTime = 0;
 unsigned long pumpRunSeconds = 0;
 unsigned long lastUploadTime = 0;
 unsigned long lastTalkBackCheck = 0;
+unsigned long lastWiFiReconnect = 0;
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Smart Irrigation");
+  lcd.setCursor(0, 1);
+  lcd.print("Booting System..");
+
+  // Relay Setup (Set default state to OFF)
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, HIGH); 
+
+  dht.begin();
+  
+  // Configure ADC Attenuation
+  analogSetAttenuation(ADC_11db);
+  pinMode(SOIL_SHALLOW_PIN, INPUT);
+  pinMode(SOIL_DEEP_PIN, INPUT);
+  pinMode(RAIN_PIN, INPUT);
+
+  // Attempt initial quick connection
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 10) {
+    delay(300);
+    attempts++;
+  }
+
+  lcd.clear();
+  ThingSpeak.begin(client);
+}
 
 void checkTalkBack() {
   if (WiFi.status() != WL_CONNECTED) return;
-  HTTPClient http;
   
-  // Fetch and execute next command in queue
+  HTTPClient http;
   String url = "https://api.thingspeak.com/talkbacks/" + talkBackID + "/commands/execute?api_key=" + talkBackAPIKey;
+  
   http.begin(url);
+  http.setTimeout(1200);
   
   int httpCode = http.GET();
   if (httpCode == 200) {
@@ -72,65 +112,32 @@ void checkTalkBack() {
   http.end();
 }
 
-void setup() {
-  Serial.begin(115200);
+void loop() {
+  bool isConnected = (WiFi.status() == WL_CONNECTED);
 
-  // Initialize LCD
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("Smart Irrigation");
-  lcd.setCursor(0, 1);
-  lcd.print("System Starting");
-
-  // Relay Setup (Active Low Relay: HIGH = OFF, LOW = ON)
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, HIGH); 
-
-  dht.begin();
-  
-  // Configure ADC Attenuation for GPIO pins 32, 34, 35
-  analogSetAttenuation(ADC_11db);
-  pinMode(SOIL_SHALLOW_PIN, INPUT);
-  pinMode(SOIL_DEEP_PIN, INPUT);
-  pinMode(RAIN_PIN, INPUT);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  // Non-blocking background reconnect every 10 seconds if connection is lost
+  if (!isConnected && (millis() - lastWiFiReconnect > 10000)) {
+    WiFi.reconnect();
+    lastWiFiReconnect = millis();
   }
 
-  Serial.println("\nWiFi Connected!");
-  lcd.clear();
-  lcd.print("WiFi Connected");
-  delay(1000);
-  lcd.clear();
-
-  ThingSpeak.begin(client);
-}
-
-void loop() {
-  // 1. Check TalkBack Commands Every 2 Seconds
-  if (millis() - lastTalkBackCheck > 2000) {
+  // 1. Check TalkBack Commands
+  if (isConnected && (millis() - lastTalkBackCheck > 2000)) {
     checkTalkBack();
     lastTalkBackCheck = millis();
   }
 
-  // 2. Read Raw Analog Values
+  // 2. Read Sensors
   int rawShallow = analogRead(SOIL_SHALLOW_PIN);
   int rawDeep    = analogRead(SOIL_DEEP_PIN);
   int rawRain    = analogRead(RAIN_PIN);
 
-  // Map soil percentages safely (Dry=4095 -> 0%, Wet=1400 -> 100%)
   int percentShallow = map(rawShallow, SOIL_DRY, SOIL_WET, 0, 100);
   int percentDeep    = map(rawDeep, SOIL_DRY, SOIL_WET, 0, 100);
   
   percentShallow = constrain(percentShallow, 0, 100);
   percentDeep    = constrain(percentDeep, 0, 100);
 
-  // Rain Module Logic: Dry outputs HIGH (~4095). Wet/Water drops pin LOW (< 2000).
- // Updated: Inverted threshold logic
   bool isRaining = (rawRain > 2000);  
   int avgMoisture = (percentShallow + percentDeep) / 2;
 
@@ -140,18 +147,14 @@ void loop() {
   if (isnan(tempC)) tempC = 0.0;
   if (isnan(hum)) hum = 0.0;
 
-  // Print Serial Diagnostics
-  Serial.printf("Raw S:%d (%d%%) | Raw D:%d (%d%%) | Raw Rain:%d (Rain:%s) | Mode:%d\n", 
-                rawShallow, percentShallow, rawDeep, percentDeep, rawRain, isRaining ? "YES" : "NO", currentMode);
-
-  // 3. Process Pump Logic
+  // 3. Process Irrigation Logic
   bool prevPumpState = isPumpActive;
 
   if (currentMode == MODE_FORCE_ON) {
     isPumpActive = true;
   } else if (currentMode == MODE_FORCE_OFF) {
     isPumpActive = false;
-  } else { // AUTO_MODE
+  } else { // MODE_AUTO
     if (avgMoisture < 30 && !isRaining) {
       isPumpActive = true;
     } else if (avgMoisture >= 70 || isRaining) {
@@ -159,7 +162,7 @@ void loop() {
     }
   }
 
-  // Active LOW relay control
+  // Relay Control (If pump state is inverted on your board, swap HIGH and LOW below)
   digitalWrite(RELAY_PIN, isPumpActive ? LOW : HIGH);
 
   // 4. Runtime Calculation
@@ -173,36 +176,43 @@ void loop() {
   }
 
   // 5. Update LCD Screen
+  // Line 1: Temp, Humidity, and WiFi Status (e.g. "T:28C H:60% W:OK")
   lcd.setCursor(0, 0);
   lcd.print("T:");
   lcd.print((int)tempC);
   lcd.print("C H:");
   lcd.print((int)hum);
-  lcd.print("% R:");
-  lcd.print(isRaining ? "YES" : "NO ");
+  lcd.print("% W:");
+  lcd.print(isConnected ? "OK" : "NO");
 
+  // Line 2: Soil Moisture, Rain Status, and Pump State (e.g. "S:45% R:NO P:ON ")
   lcd.setCursor(0, 1);
   lcd.print("S:");
-  lcd.print(percentShallow);
-  lcd.print("% D:");
-  lcd.print(percentDeep);
-  lcd.print(isPumpActive ? "% ON " : "% OFF");
+  lcd.print(avgMoisture);
+  lcd.print("% R:");
+  lcd.print(isRaining ? "YES" : "NO ");
+  lcd.print(" P:");
+  lcd.print(isPumpActive ? "ON " : "OFF");
 
   // 6. Upload Telemetry to ThingSpeak (Every 15s)
   if (millis() - lastUploadTime > 15000) {
-    ThingSpeak.setField(1, tempC);
-    ThingSpeak.setField(2, hum);
-    ThingSpeak.setField(3, percentShallow);
-    ThingSpeak.setField(4, percentDeep);
-    ThingSpeak.setField(5, isRaining ? 100 : 0);
-    ThingSpeak.setField(6, isPumpActive ? 1 : 0);
-    ThingSpeak.setField(7, (long)pumpRunSeconds);
-    
-    int x = ThingSpeak.writeFields(channelID, writeAPIKey);
-    if (x == 200) {
-      Serial.println("ThingSpeak Update Successful.");
+    if (isConnected) {
+      ThingSpeak.setField(1, tempC);
+      ThingSpeak.setField(2, hum);
+      ThingSpeak.setField(3, percentShallow);
+      ThingSpeak.setField(4, percentDeep);
+      ThingSpeak.setField(5, isRaining ? 100 : 0);
+      ThingSpeak.setField(6, isPumpActive ? 1 : 0);
+      ThingSpeak.setField(7, (long)pumpRunSeconds);
+      
+      int x = ThingSpeak.writeFields(channelID, writeAPIKey);
+      if (x == 200) {
+        Serial.println("ThingSpeak Upload Successful.");
+      } else {
+        Serial.println("ThingSpeak Upload Error Code: " + String(x));
+      }
     } else {
-      Serial.println("Problem updating channel. HTTP error code " + String(x));
+      Serial.println("Skipped Upload: WiFi Disconnected.");
     }
     lastUploadTime = millis();
   }
