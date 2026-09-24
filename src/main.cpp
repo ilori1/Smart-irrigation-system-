@@ -31,6 +31,7 @@ const int SOIL_SHALLOW_PIN = 34;
 const int SOIL_DEEP_PIN    = 35;
 const int RAIN_PIN         = 32;
 const int RELAY_PIN        = 26;
+const bool RELAY_ACTIVE_LOW = true;
 
 DHT dht(DHTPIN, DHTTYPE);
 LiquidCrystal_I2C lcd(0x27, 16, 2); 
@@ -40,6 +41,7 @@ enum SystemMode { MODE_AUTO, MODE_FORCE_ON, MODE_FORCE_OFF };
 SystemMode currentMode = MODE_AUTO;
 
 bool isPumpActive = false;
+bool lastRelayState = false;
 unsigned long pumpStartTime = 0;
 unsigned long pumpRunSeconds = 0;
 unsigned long lastUploadTime = 0;
@@ -60,7 +62,7 @@ void setup() {
 
   // Relay Setup (Set default state to OFF)
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, HIGH); 
+  digitalWrite(RELAY_PIN, RELAY_ACTIVE_LOW ? HIGH : LOW);
 
   dht.begin();
   
@@ -110,6 +112,20 @@ void checkTalkBack() {
     }
   }
   http.end();
+}
+
+void setPumpRelay(bool pumpOn) {
+  const uint8_t relayOnLevel = RELAY_ACTIVE_LOW ? LOW : HIGH;
+  const uint8_t relayOffLevel = RELAY_ACTIVE_LOW ? HIGH : LOW;
+  digitalWrite(RELAY_PIN, pumpOn ? relayOnLevel : relayOffLevel);
+
+  if (pumpOn != lastRelayState) {
+    Serial.print("Pump ");
+    Serial.print(pumpOn ? "ON" : "OFF");
+    Serial.print("; GPIO26=");
+    Serial.println(pumpOn ? relayOnLevel : relayOffLevel);
+    lastRelayState = pumpOn;
+  }
 }
 
 void loop() {
@@ -162,8 +178,8 @@ void loop() {
     }
   }
 
-  // Relay Control (If pump state is inverted on your board, swap HIGH and LOW below)
-  digitalWrite(RELAY_PIN, isPumpActive ? LOW : HIGH);
+  // Set RELAY_ACTIVE_LOW to false for relay boards triggered by HIGH.
+  setPumpRelay(isPumpActive);
 
   // 4. Runtime Calculation
   if (isPumpActive) {
